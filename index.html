@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TazeKal — Akıllı Gıda & Son Kullanma Tarihi Takibi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Masaüstü Çerçeve Sarmalayıcısı -->
+  <div class="desktop-wrapper">
+    
+    <!-- Masaüstü Kontrol & Bilgi Çubuğu -->
+    <div class="desktop-control-bar">
+      <div class="desktop-control-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="14" height="20" x="5" y="2" rx="2" ry="2"/>
+          <path d="M12 18h.01"/>
+        </svg>
+        <span>TazeKal Mobil Önizleme</span>
+      </div>
+      <div class="desktop-view-toggle">
+        <button id="btn-view-phone" class="view-btn active" title="Mobil Ekran Boyutu">Telefon</button>
+        <button id="btn-view-full" class="view-btn" title="Genişletilmiş Ekran">Geniş</button>
+      </div>
+    </div>
+
+    <!-- Mobil Cihaz Çerçevesi -->
+    <div class="phone-frame">
+      
+      <!-- Dinamik Ada / Çentik -->
+      <div class="phone-island">
+        <div class="island-camera"></div>
+        <div class="island-sensor"></div>
+      </div>
+
+      <!-- Durum Çubuğu -->
+      <div class="phone-status-bar">
+        <span id="phone-clock" class="status-time">09:41</span>
+        <div class="status-icons">
+          <!-- Sinyal & Pil İkonları -->
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M2 20h.01"/><path d="M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V4"/>
+          </svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/>
+          </svg>
+          <svg width="18" height="12" viewBox="0 0 24 14" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="1" y="1" width="18" height="12" rx="3"/>
+            <path d="M22 5v4"/>
+            <rect x="3" y="3" width="11" height="8" rx="1.5" fill="currentColor"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Toast Bildirim Alanı -->
+      <div id="toast-container" class="toast-container"></div>
+
+      <!-- Konfeti Efekt Tuvali -->
+      <canvas id="confetti-canvas"></canvas>
+
+      <!-- Mobil Ekran İçerik Alanı -->
+      <div class="app-screen-container">
+
+        <!-- ==========================================
+             1. EKRAN: ANA SAYFA (HOME)
+             ========================================== -->
+        <section id="view-home" class="view-screen active">
+          
+          <!-- 1. Üst Bar: Logo ve Bildirim Simgesi -->
+          <header class="app-header">
+            <div class="brand-wrapper">
+              <div class="brand-logo-icon">
+                <!-- Yaprak / Tazelik İkonu -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M11 20A7 7 0 0 1 4 13C4 7 11 3 20 3c0 9-4 16-9 17Z"/>
+                  <path d="M4 13c5.5 0 10 4.5 10 10"/>
+                </svg>
+              </div>
+              <div class="brand-text-group">
+                <h1 class="brand-title">Taze<span>Kal</span></h1>
+                <span class="brand-tagline">İsrafı Önle, Tazeliği Koru</span>
+              </div>
+            </div>
+
+            <!-- Bildirim Butonu -->
+            <button id="header-notif-btn" class="header-action-btn" title="Bildirimler">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+                <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+              </svg>
+              <span id="header-notif-dot" class="notification-badge-dot"></span>
+            </button>
+          </header>
+
+          <!-- 2. Kullanıcıyı Karşılayan Kısa Mesaj -->
+          <div class="welcome-section">
+            <div class="welcome-greeting">
+              <span>Merhaba, Tuana</span>
+              <span>👋</span>
+            </div>
+            <h2 class="welcome-title">Bugün mutfağın ne durumda?</h2>
+            <p class="welcome-subtitle">Tazeliği korumak için öncelikli ürünlerine göz at.</p>
+          </div>
+
+          <!-- 3. Tüketilmesi Gereken Ürünlerin Sayısını Gösteren Alan -->
+          <div class="urgent-summary-card">
+            <div class="summary-card-header">
+              <div class="summary-badge-label">
+                <span class="summary-badge-dot"></span>
+                <span>Acil Tüketim Alarmı</span>
+              </div>
+              <span style="font-size: 11px; opacity: 0.85;">Son 48 Saat</span>
+            </div>
+            <div class="summary-count-row">
+              <span id="urgent-count-badge" class="summary-count-number">3</span>
+              <span class="summary-count-text">ürün öncelikli tüketilmeli</span>
+            </div>
+            <p id="urgent-summary-desc" class="summary-card-desc">
+              Önümüzdeki 48 saat içinde tüketilmesi gereken ürünler var.
+            </p>
+            <div class="summary-card-footer">
+              <span class="summary-hint">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                </svg>
+                Tahmini Değer: ~₺145
+              </span>
+              <button class="summary-action-btn" onclick="switchTab('pantry')">
+                <span>Hepsini Gör</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="m9 18 6-6-6-6"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Kategori & Hızlı Filtre Butonları -->
+          <div class="filter-scroll-wrapper">
+            <button class="filter-chip home-filter-chip active" data-filter="all">Tümü</button>
+            <button class="filter-chip home-filter-chip" data-filter="urgent">🚨 Acil (≤ 2 Gün)</button>
+            <button class="filter-chip home-filter-chip" data-filter="dairy">🥛 Süt & Kahvaltı</button>
+            <button class="filter-chip home-filter-chip" data-filter="produce">🥬 Meyve & Sebze</button>
+            <button class="filter-chip home-filter-chip" data-filter="meat">🥩 Et & Balık</button>
+            <button class="filter-chip home-filter-chip" data-filter="bakery">🥖 Fırın</button>
+          </div>
+
+          <!-- 4 & 5. Son Kullanma Tarihi Yaklaşan Ürünler Listesi -->
+          <div class="section-header-row">
+            <h3 class="section-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+              <span>Tüketim Sırasındakiler</span>
+            </h3>
+            <span class="section-more-link" onclick="switchTab('pantry')">Kilerim →</span>
+          </div>
+
+          <div id="home-expiring-list" class="product-list">
+            <!-- Dinamik JavaScript ile doldurulur -->
+          </div>
+
+          <!-- 6. Bu Ay İsraf Edilmeden Tüketilenler İstatistik Alanı -->
+          <div class="monthly-stats-widget">
+            <div class="stats-widget-header">
+              <div class="stats-widget-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                </svg>
+                <span>Bu Ay Kurtarılanlar</span>
+              </div>
+              <span class="stats-month-tag">Kasım 2026</span>
+            </div>
+
+            <!-- 3'lü İstatistik Izgarası -->
+            <div class="stats-cards-grid">
+              <div class="stat-item-box">
+                <div class="stat-icon-circle">🌱</div>
+                <span id="widget-saved-count" class="stat-val">16</span>
+                <span class="stat-lbl">Ürün Kurtarıldı</span>
+              </div>
+              <div class="stat-item-box">
+                <div class="stat-icon-circle">₺</div>
+                <span id="widget-saved-money" class="stat-val">₺480</span>
+                <span class="stat-lbl">Tasarruf</span>
+              </div>
+              <div class="stat-item-box">
+                <div class="stat-icon-circle">🌍</div>
+                <span id="widget-saved-co2" class="stat-val">11.2 kg</span>
+                <span class="stat-lbl">CO₂ Önlenen</span>
+              </div>
+            </div>
+
+            <!-- İlerleme Çubuğu ve Motivasyon -->
+            <div class="stats-progress-box">
+              <div class="stats-progress-top">
+                <span>İsrafsızlık Başarısı</span>
+                <span style="font-weight: 800;">%88</span>
+              </div>
+              <div class="stats-bar-track">
+                <div class="stats-bar-fill" style="width: 88%;"></div>
+              </div>
+              <div class="stats-cheer-message">
+                <span>👏 Harika gidiyorsun! Geçen aya göre %18 daha az gıda israfı yaptın.</span>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ==========================================
+             2. EKRAN: KİLERİM (TÜM ÜRÜNLER)
+             ========================================== -->
+        <section id="view-pantry" class="view-screen">
+          <div class="app-header">
+            <div>
+              <h2 class="section-title" style="font-size: 20px;">Kilerim & Dolabım</h2>
+              <p class="welcome-subtitle" id="pantry-total-count">Yükleniyor...</p>
+            </div>
+            <button class="header-action-btn" onclick="switchTab('add')" title="Yeni Ürün Ekle">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Arama Kutusu -->
+          <div class="search-bar-box">
+            <span class="search-icon-slot">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+            </span>
+            <input type="text" id="pantry-search-input" class="search-input" placeholder="Ürün veya kategori ara (örn: Süt, Yumurta)...">
+          </div>
+
+          <!-- Saklama Konumu Filtreleri -->
+          <div class="filter-scroll-wrapper">
+            <button class="filter-chip pantry-filter-chip active" data-storage="all">Tüm Alanlar</button>
+            <button class="filter-chip pantry-filter-chip" data-storage="fridge">❄️ Buzdolabı</button>
+            <button class="filter-chip pantry-filter-chip" data-storage="freezer">🧊 Dondurucu</button>
+            <button class="filter-chip pantry-filter-chip" data-storage="pantry">🧺 Kiler</button>
+          </div>
+
+          <!-- Ürün Listesi -->
+          <div id="pantry-product-list" class="product-list">
+            <!-- JS ile doldurulur -->
+          </div>
+        </section>
+
+        <!-- ==========================================
+             3. EKRAN: ÜRÜN EKLEME EKRANI
+             ========================================== -->
+        <section id="view-add" class="view-screen">
+          <div class="app-header">
+            <div>
+              <h2 class="section-title" style="font-size: 20px;">Yeni Ürün Ekle</h2>
+              <p class="welcome-subtitle">Tazelik takibi için ürün detaylarını girin</p>
+            </div>
+            <button class="header-action-btn" onclick="switchTab('home')" title="Geri Dön">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Form Kartı -->
+          <form id="add-product-form" class="form-card">
+            
+            <!-- 1. Ürün Fotoğrafı / İkon Seçimi -->
+            <div class="form-group">
+              <label class="form-label">
+                <span>📸</span>
+                <span>Ürün Fotoğrafı / İkonu Seçin</span>
+              </label>
+              <div class="icon-picker-grid">
+                <button type="button" class="icon-choice-btn selected" data-icon="🥛">🥛</button>
+                <button type="button" class="icon-choice-btn" data-icon="🍓">🍓</button>
+                <button type="button" class="icon-choice-btn" data-icon="🥬">🥬</button>
+                <button type="button" class="icon-choice-btn" data-icon="🥚">🥚</button>
+                <button type="button" class="icon-choice-btn" data-icon="🧀">🧀</button>
+                <button type="button" class="icon-choice-btn" data-icon="🥖">🥖</button>
+                <button type="button" class="icon-choice-btn" data-icon="🍗">🍗</button>
+                <button type="button" class="icon-choice-btn" data-icon="🥩">🥩</button>
+                <button type="button" class="icon-choice-btn" data-icon="🐟">🐟</button>
+                <button type="button" class="icon-choice-btn" data-icon="🍎">🍎</button>
+                <button type="button" class="icon-choice-btn" data-icon="🥣">🥣</button>
+                <button type="button" class="icon-choice-btn" data-icon="🧃">🧃</button>
+              </div>
+            </div>
+
+            <!-- 2. Ürün Adı -->
+            <div class="form-group">
+              <label for="input-prod-name" class="form-label">
+                <span>🏷️</span>
+                <span>Ürün Adı</span>
+              </label>
+              <input type="text" id="input-prod-name" class="form-input" placeholder="Örn: Günlük Çiftlik Sütü" required>
+              <!-- Hızlı Öneri Etiketleri -->
+              <div class="quick-tags-row">
+                <button type="button" class="quick-tag" data-name="Günlük Süt" data-cat="dairy" data-icon="🥛">+ Süt</button>
+                <button type="button" class="quick-tag" data-name="Taze Yumurta" data-cat="dairy" data-icon="🥚">+ Yumurta</button>
+                <button type="button" class="quick-tag" data-name="Taze Çilek" data-cat="produce" data-icon="🍓">+ Çilek</button>
+                <button type="button" class="quick-tag" data-name="Domates" data-cat="produce" data-icon="🍎">+ Domates</button>
+                <button type="button" class="quick-tag" data-name="Tavuk Göğsü" data-cat="meat" data-icon="🍗">+ Tavuk</button>
+                <button type="button" class="quick-tag" data-name="Ekmek" data-cat="bakery" data-icon="🥖">+ Ekmek</button>
+              </div>
+            </div>
+
+            <!-- 3. Kategori Seçimi -->
+            <div class="form-group">
+              <label for="input-prod-cat" class="form-label">
+                <span>📁</span>
+                <span>Kategori</span>
+              </label>
+              <select id="input-prod-cat" class="form-select">
+                <option value="dairy">🥛 Süt & Kahvaltılık</option>
+                <option value="produce">🥬 Meyve & Sebze</option>
+                <option value="meat">🥩 Et, Tavuk & Balık</option>
+                <option value="bakery">🥖 Fırın & Ekmek</option>
+                <option value="drinks">🧃 İçecekler</option>
+                <option value="pantry">🌾 Kuru Gıda & Bakliyat</option>
+              </select>
+            </div>
+
+            <!-- 4. Saklama Alanı -->
+            <div class="form-group">
+              <label class="form-label">
+                <span>📍</span>
+                <span>Saklama Yeri</span>
+              </label>
+              <div class="storage-selector-row">
+                <div class="storage-choice-btn selected" data-storage="fridge">
+                  <span>❄️</span>
+                  <span>Buzdolabı</span>
+                </div>
+                <div class="storage-choice-btn" data-storage="freezer">
+                  <span>🧊</span>
+                  <span>Dondurucu</span>
+                </div>
+                <div class="storage-choice-btn" data-storage="pantry">
+                  <span>🧺</span>
+                  <span>Kiler</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. Son Kullanma Tarihi -->
+            <div class="form-group">
+              <label for="input-prod-date" class="form-label">
+                <span>📅</span>
+                <span>Son Kullanma Tarihi (SKT)</span>
+              </label>
+              <input type="date" id="input-prod-date" class="form-input" required>
+              <!-- Hızlı Tarih Seçici Kısayolları -->
+              <div class="date-shortcuts-row">
+                <button type="button" class="date-shortcut-btn" data-days="1">Yarın (+1 Gün)</button>
+                <button type="button" class="date-shortcut-btn" data-days="3">+3 Gün</button>
+                <button type="button" class="date-shortcut-btn" data-days="7">+1 Hafta</button>
+                <button type="button" class="date-shortcut-btn" data-days="14">+2 Hafta</button>
+              </div>
+            </div>
+
+            <!-- 6. Adet / Miktar Bilgisi -->
+            <div class="form-group">
+              <label class="form-label">
+                <span>⚖️</span>
+                <span>Miktar ve Adet</span>
+              </label>
+              <div class="quantity-stepper">
+                <button type="button" id="btn-qty-minus" class="stepper-btn">−</button>
+                <input type="number" id="input-prod-qty" class="stepper-input" value="1" min="1" step="0.5">
+                <button type="button" id="btn-qty-plus" class="stepper-btn">+</button>
+                <select id="input-prod-unit" class="unit-select">
+                  <option value="Adet">Adet</option>
+                  <option value="Paket">Paket</option>
+                  <option value="Gram">Gram</option>
+                  <option value="Kg">Kilogram</option>
+                  <option value="Litre">Litre</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Kaydet Butonu -->
+            <button type="submit" class="btn-primary-submit">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              <span>Ürünü Kilerime Kaydet</span>
+            </button>
+
+          </form>
+        </section>
+
+        <!-- ==========================================
+             4. EKRAN: TARİFLER & İSRAF REHBERİ
+             ========================================== -->
+        <section id="view-recipes" class="view-screen">
+          <div class="app-header">
+            <div>
+              <h2 class="section-title" style="font-size: 20px;">Bugün Ne Pişirsem?</h2>
+              <p class="welcome-subtitle">Acil tüketilmesi gereken ürünlerle tarif önerileri</p>
+            </div>
+          </div>
+
+          <div class="recipe-card">
+            <div class="recipe-header">
+              <span class="recipe-title">🍓 Çilekli & Muzlu Taze Smoothie</span>
+              <span class="recipe-save-tag">Kurtarır: Çilek, Süt</span>
+            </div>
+            <p class="recipe-desc">
+              Süresi yaklaşan taze çileklerinizi ve günlük sütünüzü blenderdan geçirerek ferahlatıcı ve sağlıklı bir ara öğün hazırlayın.
+            </p>
+            <div class="recipe-ingredients-row">
+              <span class="ingredient-chip">🍓 500g Çilek</span>
+              <span class="ingredient-chip">🥛 1 Bardak Süt</span>
+              <span class="ingredient-chip">🍯 1 Tatlı Kaşığı Bal</span>
+            </div>
+          </div>
+
+          <div class="recipe-card">
+            <div class="recipe-header">
+              <span class="recipe-title">🥬 Ispanaklı & Kaşarlı Fırın Omlet</span>
+              <span class="recipe-save-tag">Kurtarır: Ispanak, Yumurta</span>
+            </div>
+            <p class="recipe-desc">
+              Bebek ıspanakları tavada 2 dakika soteleyin, çırpılmış organik yumurta ve rendelenmiş kaşar peyniriyle fırınlayın.
+            </p>
+            <div class="recipe-ingredients-row">
+              <span class="ingredient-chip">🥬 Bebek Ispanak</span>
+              <span class="ingredient-chip">🥚 2 Adet Yumurta</span>
+              <span class="ingredient-chip">🧀 50g Kaşar</span>
+            </div>
+          </div>
+
+          <div class="recipe-card">
+            <div class="recipe-header">
+              <span class="recipe-title">🥖 Baharatlı Fırın Ekmek Krutonları</span>
+              <span class="recipe-save-tag">Kurtarır: Ekmek</span>
+            </div>
+            <p class="recipe-desc">
+              Sertleşen ekşi mayalı ekmekleri küp küp doğrayın, zeytinyağı, sarımsak tozu ve kekikle harmanlayıp fırında altın sarısı olana kadar kızartın.
+            </p>
+            <div class="recipe-ingredients-row">
+              <span class="ingredient-chip">🥖 Ekmek Dilimleri</span>
+              <span class="ingredient-chip">🫒 Zeytinyağı</span>
+              <span class="ingredient-chip">🌿 Dağ Kekiği</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==========================================
+             5. EKRAN: İSTATİSTİKLER & TASARRUF DETAYLARI
+             ========================================== -->
+        <section id="view-stats" class="view-screen">
+          <div class="app-header">
+            <div>
+              <h2 class="section-title" style="font-size: 20px;">Tasarruf & İsraf Analizi</h2>
+              <p class="welcome-subtitle">Gıda kurtarma yolculuğun</p>
+            </div>
+          </div>
+
+          <div class="monthly-stats-widget" style="margin-bottom: 18px;">
+            <div class="stats-cards-grid">
+              <div class="stat-item-box">
+                <div class="stat-icon-circle">🌱</div>
+                <span id="detail-saved-count" class="stat-val">16</span>
+                <span class="stat-lbl">Kurtarılan Gıda</span>
+              </div>
+              <div class="stat-item-box">
+                <div class="stat-icon-circle">₺</div>
+                <span id="detail-saved-money" class="stat-val">₺480</span>
+                <span class="stat-lbl">Cep Tasarrufu</span>
+              </div>
+              <div class="stat-item-box">
+                <div class="stat-icon-circle">🌍</div>
+                <span id="detail-saved-co2" class="stat-val">11.2 kg</span>
+                <span class="stat-lbl">Karbon Tasarrufu</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-header-row">
+            <h3 class="section-title">Kurtarılan Ürünler Geçmişi</h3>
+          </div>
+          <div id="consumed-history-list" class="product-list">
+            <!-- JS ile doldurulur -->
+          </div>
+        </section>
+
+      </div> <!-- /app-screen-container -->
+
+      <!-- ==========================================
+           7. ALT NAVİGASYON MENÜSÜ (BOTTOM BAR)
+           ========================================== -->
+      <nav class="bottom-nav-bar">
+        
+        <!-- Ana Sayfa Butonu -->
+        <button class="nav-tab-item active" data-tab="home" title="Ana Sayfa">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          <span class="nav-tab-label">Ana Sayfa</span>
+        </button>
+
+        <!-- Kilerim Butonu -->
+        <button class="nav-tab-item" data-tab="pantry" title="Kilerim">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+            <path d="m3.3 7 8.7 5 8.7-5"/>
+            <path d="M12 22V12"/>
+          </svg>
+          <span class="nav-tab-label">Kilerim</span>
+        </button>
+
+        <!-- Ortadaki Hızlı Ürün Ekle FAB Butonu -->
+        <button class="nav-tab-item nav-fab-btn" data-tab="add" title="Yeni Ürün Ekle">
+          <div class="fab-circle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+          </div>
+        </button>
+
+        <!-- Tarifler Butonu -->
+        <button class="nav-tab-item" data-tab="recipes" title="Tarifler">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+            <path d="M15 14v.01"/>
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M8 12h8"/>
+          </svg>
+          <span class="nav-tab-label">Tarifler</span>
+        </button>
+
+        <!-- İstatistik Butonu -->
+        <button class="nav-tab-item" data-tab="stats" title="İstatistik">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 20V10"/>
+            <path d="M12 20V4"/>
+            <path d="M6 20v-6"/>
+          </svg>
+          <span class="nav-tab-label">İstatistik</span>
+        </button>
+
+      </nav>
+
+      <!-- ==========================================
+           BİLDİRİM PANELİ (MODAL BOTTOM SHEET)
+           ========================================== -->
+      <div id="notifications-modal" class="modal-overlay">
+        <div class="bottom-sheet">
+          <div class="sheet-handle"></div>
+          <div class="sheet-header">
+            <div class="sheet-title">🔔 Tazelik Bildirimleri</div>
+            <button id="close-notif-modal" class="sheet-close-btn">✕</button>
+          </div>
+          <p style="font-size: 12px; color: var(--color-text-secondary); margin-bottom: 14px;">
+            Son kullanma tarihi 48 saatten az kalan ürünler:
+          </p>
+          <div id="notif-list-container">
+            <!-- JS ile doldurulur -->
+          </div>
+        </div>
+      </div>
+
+    </div> <!-- /phone-frame -->
+
+  </div> <!-- /desktop-wrapper -->
+
+  <!-- JavaScript Dosyaları -->
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
