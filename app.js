@@ -605,6 +605,9 @@ function setupEventListeners() {
 
   // Form başlangıç tarihi: +3 gün
   setDefaultExpiryDate(3);
+
+  // Barkod Tarama Dinleyicileri
+  initBarcodeScanner();
 }
 
 // Bildirim Panelini Doldur
@@ -725,3 +728,381 @@ function triggerConfetti() {
 
   renderParticles();
 }
+
+// ============================================================
+// BARKOD İLE ÜRÜN EKLEME & OPEN FOOD FACTS ENTEGRASYONU
+// ============================================================
+
+let currentScannerStream = null;
+let html5QrScannerInstance = null;
+let barcodeDetectionLoopId = null;
+let isScannerActive = false;
+
+function initBarcodeScanner() {
+  const openScannerBtn = document.getElementById('btn-open-scanner');
+  const closeScannerBtn = document.getElementById('close-scanner-modal');
+  const scannerModal = document.getElementById('barcode-scanner-modal');
+  const queryManualBtn = document.getElementById('btn-query-manual-barcode');
+  const manualInput = document.getElementById('input-manual-barcode');
+
+  if (openScannerBtn) {
+    openScannerBtn.addEventListener('click', () => {
+      openBarcodeModal();
+    });
+  }
+
+  if (closeScannerBtn) {
+    closeScannerBtn.addEventListener('click', () => {
+      closeBarcodeModal();
+    });
+  }
+
+  if (scannerModal) {
+    scannerModal.addEventListener('click', (e) => {
+      if (e.target === scannerModal) {
+        closeBarcodeModal();
+      }
+    });
+  }
+
+  if (queryManualBtn && manualInput) {
+    queryManualBtn.addEventListener('click', () => {
+      const barcode = manualInput.value.trim();
+      if (!barcode) {
+        showToast('⚠️ Lütfen geçerli bir barkod numarası giriniz.');
+        manualInput.focus();
+        return;
+      }
+      handleBarcodeDetected(barcode);
+    });
+
+    manualInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        queryManualBtn.click();
+      }
+    });
+  }
+}
+
+function openBarcodeModal() {
+  const modal = document.getElementById('barcode-scanner-modal');
+  const manualInput = document.getElementById('input-manual-barcode');
+  const statusEl = document.getElementById('scanner-status');
+
+  if (manualInput) manualInput.value = '';
+  if (statusEl) statusEl.textContent = 'Kamera başlatılıyor...';
+  if (modal) modal.classList.add('active');
+
+  startCameraScanner();
+}
+
+function closeBarcodeModal() {
+  stopCameraScanner();
+  const modal = document.getElementById('barcode-scanner-modal');
+  if (modal) modal.classList.remove('active');
+}
+
+async function startCameraScanner() {
+  isScannerActive = true;
+  const statusEl = document.getElementById('scanner-status');
+  const videoEl = document.getElementById('scanner-video');
+  const readerEl = document.getElementById('scanner-qr-reader');
+
+  // 1. Native BarcodeDetector API kontrolü (Android Chrome, iOS Safari 17+, Edge)
+  if ('BarcodeDetector' in window) {
+    try {
+      const formats = await BarcodeDetector.getSupportedFormats();
+      const supportsEan = formats.includes('ean_13') || formats.includes('ean_8');
+      
+      if (supportsEan) {
+        if (readerEl) readerEl.style.display = 'none';
+        if (videoEl) videoEl.style.display = 'block';
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+        });
+
+        currentScannerStream = stream;
+        videoEl.srcObject = stream;
+        await videoEl.play();
+
+        if (statusEl) statusEl.textContent = 'Barkodu kutu içine hizalayın...';
+        
+        const detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8'] });
+        startNativeDetectionLoop(detector, videoEl);
+        return;
+      }
+    } catch (err) {
+      console.warn('Native BarcodeDetector / kamera başlatma hatası:', err);
+    }
+  }
+
+  // 2. Fallback: Html5Qrcode kütüphanesi
+  if (window.Html5Qrcode) {
+    try {
+      if (videoEl) videoEl.style.display = 'none';
+      if (readerEl) readerEl.style.display = 'block';
+
+      html5QrScannerInstance = new Html5Qrcode("scanner-qr-reader");
+      const formats = window.Html5QrcodeSupportedFormats ? [
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8
+      ] : undefined;
+
+      await html5QrScannerInstance.start(
+        { facingMode: "environment" },
+        {
+          fps: 10,
+          qrbox: { width: 240, height: 140 },
+          formatsToSupport: formats
+        },
+        (decodedText) => {
+          handleBarcodeDetected(decodedText);
+        },
+        () => {
+          // Tarama devam ediyor...
+        }
+      );
+
+      if (statusEl) statusEl.textContent = 'Barkodu kutu içine hizalayın...';
+      return;
+    } catch (err) {
+      console.warn('Html5Qrcode başlatma hatası:', err);
+    }
+  }
+
+  // 10. Kamera izni verilmezse veya kamera desteklenmiyorsa
+  handleCameraError();
+}
+
+function startNativeDetectionLoop(detector, videoEl) {
+  let isScanning = true;
+
+  async function checkFrame() {
+    if (!isScannerActive || !isScanning) return;
+
+    try {
+      if (videoEl.readyState >= 2) {
+        const barcodes = await detector.detect(videoEl);
+        if (barcodes && barcodes.length > 0) {
+          const eanCode = barcodes.find(b => b.format === 'ean_13' || b.format === 'ean_8') || barcodes[0];
+          if (eanCode && eanCode.rawValue) {
+            isScanning = false;
+            handleBarcodeDetected(eanCode.rawValue);
+            return;
+          }
+        }
+      }
+    } catch (e) {
+      // Bir sonraki karede tekrar tara
+    }
+
+    if (isScannerActive && isScanning) {
+      barcodeDetectionLoopId = requestAnimationFrame(checkFrame);
+    }
+  }
+
+  barcodeDetectionLoopId = requestAnimationFrame(checkFrame);
+}
+
+function handleCameraError() {
+  const statusEl = document.getElementById('scanner-status');
+  if (statusEl) {
+    statusEl.textContent = '⚠️ Kamera açılamadı. Barkod numarasını manuel yazabilirsiniz:';
+  }
+  const manualInput = document.getElementById('input-manual-barcode');
+  if (manualInput) {
+    setTimeout(() => manualInput.focus(), 300);
+  }
+}
+
+function stopCameraScanner() {
+  // 11. Tarama tamamlandığında kamera kapatılsın
+  isScannerActive = false;
+
+  if (barcodeDetectionLoopId) {
+    cancelAnimationFrame(barcodeDetectionLoopId);
+    barcodeDetectionLoopId = null;
+  }
+
+  if (currentScannerStream) {
+    currentScannerStream.getTracks().forEach(track => {
+      try {
+        track.stop();
+      } catch (e) {}
+    });
+    currentScannerStream = null;
+  }
+
+  const videoEl = document.getElementById('scanner-video');
+  if (videoEl) {
+    videoEl.srcObject = null;
+  }
+
+  if (html5QrScannerInstance) {
+    try {
+      html5QrScannerInstance.stop().then(() => {
+        try { html5QrScannerInstance.clear(); } catch (e) {}
+        html5QrScannerInstance = null;
+      }).catch(() => {
+        html5QrScannerInstance = null;
+      });
+    } catch (e) {
+      html5QrScannerInstance = null;
+    }
+  }
+}
+
+async function handleBarcodeDetected(rawBarcode) {
+  // Kamera donanımını hemen durdur ve modalı kapat
+  closeBarcodeModal();
+
+  const barcode = String(rawBarcode).replace(/\D/g, '');
+  if (!barcode) {
+    showToast('⚠️ Geçersiz barkod formatı.');
+    return;
+  }
+
+  // Mobil titreşim
+  if (navigator.vibrate) {
+    try { navigator.vibrate(80); } catch (e) {}
+  }
+
+  showToast(`🔍 Barkod okundu: ${barcode} — Ürün sorgulanıyor...`);
+
+  // 4. Okunan barkod numarasını Open Food Facts API üzerinden sorgula
+  try {
+    const product = await fetchProductFromOpenFoodFacts(barcode);
+    if (product) {
+      // 5. Ürün bulunursa ürün adı, marka ve kategori bilgilerini otomatik doldur
+      applyProductDataToForm(product, barcode);
+    } else {
+      // 6. Ürün bulunamazsa kullanıcı manuel olarak ürün bilgilerini girebilsin
+      showToast(`ℹ️ Barkod (${barcode}) veritabanında bulunamadı. Lütfen ürün bilgilerini manuel giriniz.`);
+      const nameInput = document.getElementById('input-prod-name');
+      if (nameInput) nameInput.focus();
+    }
+  } catch (err) {
+    console.error('Open Food Facts bağlantı hatası:', err);
+    showToast(`ℹ️ Ürün sorgulanamadı. Lütfen ürün bilgilerini manuel olarak giriniz.`);
+    const nameInput = document.getElementById('input-prod-name');
+    if (nameInput) nameInput.focus();
+  }
+}
+
+async function fetchProductFromOpenFoodFacts(barcode) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+  const urls = [
+    `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json`,
+    `https://world.openfoodfacts.net/api/v2/product/${encodeURIComponent(barcode)}.json`
+  ];
+
+  for (const url of urls) {
+    try {
+      const response = await fetch(url, {
+        headers: { 'Accept': 'application/json' },
+        signal: controller.signal
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        continue;
+      }
+
+      const data = await response.json();
+      clearTimeout(timeoutId);
+      if (data && (data.status === 1 || data.product)) {
+        return data.product;
+      }
+    } catch (e) {
+      // Diğer aynayı dene
+    }
+  }
+
+  clearTimeout(timeoutId);
+  return null;
+}
+
+function applyProductDataToForm(product, barcode) {
+  const nameInput = document.getElementById('input-prod-name');
+  const catInput = document.getElementById('input-prod-cat');
+
+  // Ürün Adı & Marka Bilgisi
+  const rawName = product.product_name_tr || product.product_name || product.generic_name_tr || product.generic_name || '';
+  const brand = product.brands ? product.brands.split(',')[0].trim() : '';
+  
+  let formattedName = rawName;
+  if (brand && rawName) {
+    if (!rawName.toLowerCase().includes(brand.toLowerCase())) {
+      formattedName = `${brand} ${rawName}`;
+    }
+  } else if (!formattedName && brand) {
+    formattedName = brand;
+  }
+
+  if (nameInput && formattedName) {
+    nameInput.value = formattedName;
+  }
+
+  // Kategori eşleştirme
+  const categoryMatch = mapOpenFoodFactsCategory(product);
+  if (catInput && categoryMatch) {
+    catInput.value = categoryMatch.id;
+  }
+
+  // Uygun ikonu otomatik seç
+  if (categoryMatch && categoryMatch.icon) {
+    selectedIcon = categoryMatch.icon;
+    document.querySelectorAll('.icon-choice-btn').forEach(btn => {
+      btn.classList.toggle('selected', btn.dataset.icon === selectedIcon);
+    });
+  }
+
+  // 7 & 8. Son kullanma tarihi tahmin EDİLMEZ. Kullanıcının girmesi için tarih alanına odaklanılır.
+  const dateInput = document.getElementById('input-prod-date');
+  if (dateInput) {
+    setTimeout(() => dateInput.focus(), 250);
+  }
+
+  showToast(`✨ "${formattedName || barcode}" bilgileri getirildi! Lütfen SKT belirleyiniz.`);
+}
+
+function mapOpenFoodFactsCategory(product) {
+  const tags = [
+    ...(product.categories_tags || []),
+    ...(product.categories_hierarchy || []),
+    ...(typeof product.categories === 'string' ? product.categories.split(',') : [])
+  ].join(' ').toLowerCase();
+
+  const name = (product.product_name || '').toLowerCase();
+  const combined = `${tags} ${name}`;
+
+  if (/süt|peynir|yoğurt|yogurt|cheese|milk|dairy|dairies|lait|fromage|kefir|tereyağ|butter|labne|ayran/i.test(combined)) {
+    return { id: 'dairy', icon: '🥛' };
+  }
+  if (/meyve|sebze|elma|muz|çilek|domates|fruit|vegetable|salad|legume|tomato|apple|berry|patates|soğan/i.test(combined)) {
+    return { id: 'produce', icon: '🥬' };
+  }
+  if (/et|tavuk|balık|somon|meat|poultry|chicken|fish|poisson|beef|viande|sucuk|sosis|salam|hindi/i.test(combined)) {
+    return { id: 'meat', icon: '🍗' };
+  }
+  if (/ekmek|fırın|un|pasta|bisküvi|bread|bakery|pain|biscuit|cake|kurabiye|simit|kraker|unlu/i.test(combined)) {
+    return { id: 'bakery', icon: '🥖' };
+  }
+  if (/içecek|su|meyve suyu|kola|gazoz|çay|kahve|beverage|drink|juice|soda|tea|coffee|water|boisson/i.test(combined)) {
+    return { id: 'drinks', icon: '🧃' };
+  }
+  if (/kuru gıda|bakliyat|makarna|pirinç|mercimek|bulgur|nohut|cereal|pasta|rice|spices|canned/i.test(combined)) {
+    return { id: 'pantry', icon: '🌾' };
+  }
+
+  return { id: 'dairy', icon: '🥛' };
+}
+
