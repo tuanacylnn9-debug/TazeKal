@@ -1,21 +1,15 @@
 <!DOCTYPE html>
 <html lang="tr">
-  <link rel="stylesheet" href="style.css">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>TazeKal — Akıllı Gıda & Son Kullanma Tarihi Takibi</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TazeKal</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-href="style.css"
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Barkod Tarama Kütüphanesi (Html5Qrcode Fallback) -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 </head>
 <body>
 
@@ -283,6 +277,20 @@ href="style.css"
           <!-- Form Kartı -->
           <form id="add-product-form" class="form-card">
             
+            <!-- Barkod Tara Butonu -->
+            <button type="button" id="btn-open-scanner" class="btn-barcode-scan">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 7V5a2 2 0 0 1 2-2h2"/>
+                <path d="M17 3h2a2 2 0 0 1 2 2v2"/>
+                <path d="M21 17v2a2 2 0 0 1-2 2h-2"/>
+                <path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
+                <line x1="7" y1="8" x2="7" y2="16"/>
+                <line x1="11" y1="8" x2="11" y2="16"/>
+                <line x1="15" y1="8" x2="15" y2="16"/>
+              </svg>
+              <span>Barkod Tara (Otomatik Doldur)</span>
+            </button>
+
             <!-- 1. Ürün Fotoğrafı / İkon Seçimi -->
             <div class="form-group">
               <label class="form-label">
@@ -537,16 +545,16 @@ href="style.css"
               <line x1="12" y1="5" x2="12" y2="19"/>
               <line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
-          <script src="data.js"></script>
-<script src="app.js"></script>
+          </div>
+        </button>
 
         <!-- Tarifler Butonu -->
         <button class="nav-tab-item" data-tab="recipes" title="Tarifler">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
             <path d="M15 14v.01"/>
-            <script src="data.js"></script>
-<script src="app.js"></script>
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M8 12h8"/>
           </svg>
           <span class="nav-tab-label">Tarifler</span>
         </button>
@@ -579,6 +587,49 @@ href="style.css"
           <div id="notif-list-container">
             <!-- JS ile doldurulur -->
           </div>
+        </div>
+      </div>
+
+      <!-- ==========================================
+           BARKOD TARAYICI MODAL PENCERESİ
+           ========================================== -->
+      <div id="barcode-scanner-modal" class="modal-overlay">
+        <div class="bottom-sheet barcode-sheet">
+          <div class="sheet-handle"></div>
+          <div class="sheet-header">
+            <div class="sheet-title">📷 Barkod Tara</div>
+            <button type="button" id="close-scanner-modal" class="sheet-close-btn">✕</button>
+          </div>
+
+          <!-- Kamera & Tarayıcı Görüntü Alanı -->
+          <div class="scanner-viewport-wrapper">
+            <video id="scanner-video" playsinline muted autoplay></video>
+            <div id="scanner-qr-reader"></div>
+            
+            <!-- Barkod Hedef Çerçevesi (Kılavuz Çizgi) -->
+            <div class="scanner-aim-frame">
+              <div class="scanner-corner tl"></div>
+              <div class="scanner-corner tr"></div>
+              <div class="scanner-corner bl"></div>
+              <div class="scanner-corner br"></div>
+              <div class="scanner-laser-line"></div>
+            </div>
+            
+            <!-- Durum Bildirimi / Bilgilendirme -->
+            <div id="scanner-status" class="scanner-status-text">Barkodu kutu içine hizalayın...</div>
+          </div>
+
+          <!-- Manuel Barkod Numarası Girişi (Kamera izni verilmezse veya alternatif olarak) -->
+          <div class="manual-barcode-box">
+            <div class="manual-barcode-header">
+              <span>veya barkod numarasını manuel yazın:</span>
+            </div>
+            <div class="manual-barcode-input-row">
+              <input type="text" id="input-manual-barcode" class="form-input" placeholder="Örn: 8690504018086" inputmode="numeric">
+              <button type="button" id="btn-query-manual-barcode" class="btn-query-barcode">Sorgula</button>
+            </div>
+          </div>
+
         </div>
       </div>
 

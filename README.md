@@ -46,15 +46,23 @@
 
 ---
 
-## ➕ Ürün Ekleme Ekranı
+## ➕ Ürün Ekleme Ekranı & 📷 Barkod Tarama
 
+- **📷 Barkod ile Otomatik Doldurma:**
+  - Cihaz kamerası üzerinden **EAN-13** ve **EAN-8** formatındaki gıda barkodlarını anlık tarama.
+  - Modern tarayıcılarda donanım hızlandırmalı `BarcodeDetector` API, diğer cihazlarda `Html5Qrcode` fallback desteği.
+  - Taranan barkodu **Open Food Facts API** üzerinden sorgulayarak ürün adı, marka ve kategori bilgilerini otomatik doldurma.
+  - Kamera kapatma: Tarama tamamlandığında veya modal kapatıldığında kamera donanımı anında kapatılır.
+  - Kamera izni verilmediğinde veya kamerası olmayan cihazlarda **manuel barkod numarası yazma ve sorgulama** desteği.
+  - Ürün veritabanında bulunamadığında kullanıcıyı bilgilendirerek manuel girişe imkan tanıma.
+  - **Son Kullanma Tarihi Güvenliği:** Barkoddan SKT tahmini yapılmaz; tarih, miktar ve saklama konumu kullanıcı tarafından güvenle belirlenir.
 - **Fotoğraf / İkon Seçimi:** 12 farklı popüler gıda ikonu.
 - **Ürün Adı:** Hızlı öneri etiketleriyle tek tıkla tamamlama (+ Süt, + Yumurta, + Çilek...).
 - **Kategori:** Süt & Kahvaltı, Meyve & Sebze, Et & Balık, Fırın, İçecek, Kuru Gıda.
 - **Saklama Yeri:** Buzdolabı, Dondurucu veya Kiler seçimi.
 - **Son Kullanma Tarihi (SKT):** Hızlı butonlar (+1 Gün, +3 Gün, +1 Hafta, +2 Hafta) veya takvim.
 - **Miktar / Adet:** Artırıp azaltılabilir sayaç ve birim seçici (Adet, Paket, Gram, Kg, Litre).
-- **Kayıt:** Form gönderildiğinde anında yerel hafızaya kaydedilir ve listeye eklenir.
+- **Kayıt:** Form kaydedildiğinde ürün doğrudan Kilerim ve Ana Sayfa listesine eklenir.
 
 ---
 
@@ -81,6 +89,5 @@ open index.html
 ## 🛠️ Gelecek Geliştirme Yol Haritası (Sonraki Aşamalar)
 1. **Veritabanı Entegrasyonu:** Supabase veya Firebase Firestore ile çoklu cihaz eşitlemesi.
 2. **Kullanıcı Girişi:** Apple ID & Google Sign-In.
-3. **Barkod Okuyucu:** Kamerayla ürün barkodunu okutup son kullanma tarihini otomatik algılama.
-4. **Fiş Tarama (AI OCR):** Market fişini taratarak tüm ürünleri otomatik kilere aktarma.
-5. **Push Bildirimleri:** SKT'ye 1 gün ve 3 gün kala telefon bildirimleri gönderme.
+3. **Fiş Tarama (AI OCR):** Market fişini taratarak tüm ürünleri otomatik kilere aktarma.
+4. **Push Bildirimleri:** SKT'ye 1 gün ve 3 gün kala telefon bildirimleri gönderme.
